@@ -116,9 +116,9 @@ def main():
     args = parser.parse_args()
     print(args)
 
-    # device = f'cuda:{args.device}' if torch.cuda.is_available() else 'cpu'
-    # device = torch.device(device)
-    device = 'cpu'
+    device = f'cuda:{args.device}' if torch.cuda.is_available() else 'cpu'
+    device = torch.device(device)
+    # device = 'cpu'
     print(device)
 
     dataset = PygNodePropPredDataset(
