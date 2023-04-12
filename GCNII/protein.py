@@ -75,7 +75,7 @@ def test(model, data, y_true,split_idx, evaluator):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='OGBN-Protein (Full-Batch)')
+    parser = argparse.ArgumentParser(description='OGBN-Proteins (Full-Batch)')
     parser.add_argument('--device', type=int, default=1)
     parser.add_argument('--log_steps', type=int, default=10)
     parser.add_argument('--num_layers', type=int, default=16)
@@ -94,14 +94,14 @@ def main():
     device = f'cuda:{args.device}' if torch.cuda.is_available() else 'cpu'
     device = torch.device(device)
 
-    dataset = PygNodePropPredDataset(name='ogbn-protein')
+    dataset = PygNodePropPredDataset(name='ogbn-proteins')
     split_idx = dataset.get_idx_split()
     data = dataset[0]
     data = data.to(device)
     train_idx = split_idx['train'].to(device)
     data.edge_index = to_undirected(data.edge_index, data.num_nodes)
     Net = GCNIIdense_model
-    evaluator = Evaluator(name='ogbn-protein')
+    evaluator = Evaluator(name='ogbn-proteins')
     acc_list = []
     for run in range(args.runs):
         model = Net(data.x.size(-1), args.hidden_channels,
