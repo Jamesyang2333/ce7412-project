@@ -25,7 +25,7 @@ from utils import BatchSampler, DataLoaderWrapper
 device = None
 dataset = "ogbn-proteins"
 n_node_feats, n_edge_feats, n_classes = 0, 8, 112
-#embedding_dim = 16
+embedding_dim = 16
 
 
 def seed(seed=0):
@@ -59,27 +59,27 @@ def preprocess(args, graph, labels, train_idx):
     n_node_feats = graph.ndata["feat"].shape[-1]
 
     # Only the labels in the training set are used as features, while others are filled with zeros.
-    #graph.ndata["train_labels_onehot"] = torch.zeros(graph.number_of_nodes(), n_classes)
-    #graph.ndata["train_labels_onehot"][train_idx, labels[train_idx, 0]] = 1
+    graph.ndata["train_labels_onehot"] = torch.zeros(graph.number_of_nodes(), n_classes)
+    graph.ndata["train_labels_onehot"][train_idx, labels[train_idx, 0]] = 1
 
     graph.create_formats_()
 
-#    if args.use_embed:
-#        feat = graph.srcdata["feat"]
-#        embedding = torch.load('proteins_embedding.pt', map_location='cpu')
-#        # data.x = torch.cat([data.x, embedding], dim=-1)
-#        graph.srcdata["feat"] = torch.cat([feat, embedding], dim=-1)
+    if args.use_embed:
+        feat = graph.srcdata["feat"]
+        embedding = torch.load('proteins_embedding.pt', map_location='cpu')
+        # data.x = torch.cat([data.x, embedding], dim=-1)
+        graph.srcdata["feat"] = torch.cat([feat, embedding], dim=-1)
 
     return graph, labels
 
 
 def gen_model(args):
     n_node_feats_ = n_node_feats
-#    if args.use_labels:
-#        n_node_feats_ += n_classes
+    if args.use_labels:
+        n_node_feats_ += n_classes
 
-#    if args.use_embed:
-#        n_node_feats_ += embedding_dim
+    if args.use_embed:
+        n_node_feats_ += embedding_dim
 
     model = GAT(
         n_node_feats_,
@@ -89,7 +89,6 @@ def gen_model(args):
         n_heads=args.n_heads,
         n_hidden=args.n_hidden,
         edge_emb=16,
-        #edge_emb=0,
         activation=F.relu,
         dropout=args.dropout,
         input_drop=args.input_drop,
@@ -101,11 +100,11 @@ def gen_model(args):
     return model
 
 
-#def add_labels(graph, idx):
-#    feat = graph.srcdata["feat"]
-#    train_labels_onehot = torch.zeros([feat.shape[0], n_classes], device=device)
-#    train_labels_onehot[idx] = graph.srcdata["train_labels_onehot"][idx]
-#    graph.srcdata["feat"] = torch.cat([feat, train_labels_onehot], dim=-1)
+def add_labels(graph, idx):
+    feat = graph.srcdata["feat"]
+    train_labels_onehot = torch.zeros([feat.shape[0], n_classes], device=device)
+    train_labels_onehot[idx] = graph.srcdata["train_labels_onehot"][idx]
+    graph.srcdata["feat"] = torch.cat([feat, train_labels_onehot], dim=-1)
 
 
 def train(args, model, dataloader, _labels, _train_idx, criterion, optimizer, _evaluator):
@@ -117,14 +116,14 @@ def train(args, model, dataloader, _labels, _train_idx, criterion, optimizer, _e
         subgraphs = [b.to(device) for b in subgraphs]
         new_train_idx = torch.arange(len(output_nodes))
 
-        #if args.use_labels:
-        #    train_labels_idx = torch.arange(len(output_nodes), len(input_nodes))
-        #    train_pred_idx = new_train_idx
+        if args.use_labels:
+            train_labels_idx = torch.arange(len(output_nodes), len(input_nodes))
+            train_pred_idx = new_train_idx
 
-        #    add_labels(subgraphs[0], train_labels_idx)
-        #else:
-        #    train_pred_idx = new_train_idx
-        train_pred_idx = new_train_idx
+            add_labels(subgraphs[0], train_labels_idx)
+        else:
+            train_pred_idx = new_train_idx
+
         pred = model(subgraphs)
         loss = criterion(pred[train_pred_idx], subgraphs[-1].dstdata["labels"][train_pred_idx].float())
         optimizer.zero_grad()
@@ -154,8 +153,8 @@ def evaluate(args, model, dataloader, labels, train_idx, val_idx, test_idx, crit
             subgraphs = [b.to(device) for b in subgraphs]
             new_train_idx = list(range(len(input_nodes)))
 
-            #if args.use_labels:
-            #    add_labels(subgraphs[0], new_train_idx)
+            if args.use_labels:
+                add_labels(subgraphs[0], new_train_idx)
 
             pred = model(subgraphs)
             preds[output_nodes] += pred
