@@ -1,4 +1,7 @@
 # ce7412-project
+## Dataset
+The ogbn-protein dataset will be automatically downloaded by the scripts.
+## Instruction
 MLP
 ```
 python mlp.py
