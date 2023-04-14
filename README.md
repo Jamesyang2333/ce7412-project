@@ -22,3 +22,8 @@ python main.py --use_gpu --conv_encode_edge --use_one_hot_encoding --num_layers 
 python main.py --use_gpu --conv_encode_edge --use_one_hot_encoding --num_layers 28 --block res --gcn_aggr mean --epochs 100
 python main.py --use_gpu --conv_encode_edge --use_one_hot_encoding --num_layers 28 --block res+ --gcn_aggr mean --epochs 100
 ```
+GAT
+```
+cd GAT
+python gat_1.py --use_embed False --gpu 1
+```
